@@ -52,13 +52,14 @@ class vmmGraphicsDetails(vmmGObjectUI):
                 "on_graphics_address_changed": _e(_EDIT_GFX_LISTEN),
                 "on_graphics_port_changed": _e(_EDIT_GFX_PORT),
                 "on_graphics_rendernode_changed": _e(_EDIT_GFX_OPENGL),
+                "on_default_socket_path_disabled": self._toggle_custom_socket_path_entry,
             }
         )
 
         self._init_ui()
         self.top_box = self.widget("graphics-box")
 
-    def _cleanup(self):
+    def _cleanup(self)custom_:
         self.vm = None
         self.conn = None
 
@@ -88,6 +89,7 @@ class vmmGraphicsDetails(vmmGObjectUI):
         graphics_model.clear()
         graphics_model.append(["spice", _("Spice server")])
         graphics_model.append(["vnc", _("VNC server")])
+        graphics_model.append(["dbus", _("Dbus")])
 
         graphics_listen_list = self.widget("graphics-listen-type")
         graphics_listen_model = Gtk.ListStore(str, str)
@@ -127,9 +129,10 @@ class vmmGraphicsDetails(vmmGObjectUI):
         gtype = uiutil.get_list_selection(self.widget("graphics-type"))
         is_vnc = gtype == "vnc"
         is_spice = gtype == "spice"
+        is_dbus = gtype == "dbus"
 
         listen = uiutil.get_list_selection(self.widget("graphics-listen-type"))
-        has_listen_none = listen in ["none", "socket"]
+        has_listen_none = listen in ["none"]
 
         has_virtio_3d = bool(
             [v for v in self.vm.xmlobj.devices.video if (v.model == "virtio" and v.accel3d)]
@@ -176,6 +179,20 @@ class vmmGraphicsDetails(vmmGObjectUI):
 
         for row in all_rows:
             uiutil.set_grid_row_visible(self.widget(row), row in rows)
+
+    def _update_listen_type(self):
+        graphics_listen_model = self.widget("graphics-listen-type").get_model()
+        gtype = uiutil.get_list_selection(self.widget("graphics-type"))
+
+        graphics_listen_model.clear()
+        
+        if gtype == 'dbus':
+            graphics_listen_model.append(["address", _("Address")])
+            graphics_listen_model.append(["socket", _("Unix Socket")])
+            graphics_listen_model.append(["none", _("None")])
+        else:
+            graphics_listen_model.append(["address", _("Address")])
+            graphics_listen_model.append(["none", _("None")])
 
     ##############
     # Public API #
